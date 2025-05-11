@@ -93,76 +93,82 @@
 
   <!-- JavaScript logic -->
   <script>
-    let indexData = [];
-    let indexNames = [];
-    let chart = null;
+function drawIndexChart(indexName) {
+  const rows = indexData
+    .filter(r => r.name === indexName)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    Papa.parse("dump.csv", {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: ({ data }) => {
-        indexData = data.map(r => ({
-          date: r.index_date,
-          name: r.index_name,
-          value: parseFloat(r.open_index_value)
-        }));
-        indexNames = Array.from(new Set(indexData.map(r => r.name)));
-        renderSidebar();
-      }
-    });
+  const labels = rows.map(r => r.date);
+  const closingValues = rows.map(r => r.closingValue);
+  const openingValues = rows.map(r => r.openingValue);
 
-    function renderSidebar() {
-      const list = document.getElementById("index-list");
-      list.innerHTML = "";
-      indexNames.forEach(name => {
-        const div = document.createElement("div");
-        div.textContent = name;
-        div.onclick = () => drawIndexChart(name);
-        list.appendChild(div);
-      });
-    }
+  const ctx = document.getElementById("indexChart").getContext("2d");
+  if (chart) chart.destroy();
 
-    function drawIndexChart(indexName) {
-      const rows = indexData
-        .filter(r => r.name === indexName)
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
+  const movingAverage = calculateMovingAverage(closingValues, 50); // 50-day moving average
 
-      const labels = rows.map(r => r.date);
-      const values = rows.map(r => r.value);
-
-      const ctx = document.getElementById("indexChart").getContext("2d");
-      if (chart) chart.destroy();
-
-      chart = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels,
-          datasets: [{
-            label: `${indexName} open_index_value`,
-            data: values,
-            borderColor: "#4b0082",
-            backgroundColor: "rgba(75, 0, 130, 0.1)",
-            fill: true,
-            tension: 0.3
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            title: {
-              display: true,
-              text: `${indexName} open_index_value`,
-              color: "#ffffff"
-            },
-            legend: {
-              labels: {
-                color: "#ffffff"
-              }
+  chart = new Chart(ctx, {
+    type: document.getElementById("chartType").value,
+    data: {
+      labels,
+      datasets: [{
+        label: `${indexName} Closing Value`,
+        data: closingValues,
+        borderColor: "#4b0082",
+        backgroundColor: "rgba(75, 0, 130, 0.1)",
+        fill: true,
+        tension: 0.3
+      }, {
+        label: `${indexName} Opening Value`,
+        data: openingValues,
+        borderColor: "orange",
+        backgroundColor: "rgba(255, 165, 0, 0.1)",
+        fill: false,
+        tension: 0.3
+      }, {
+        label: '50-Day Moving Average',
+        data: movingAverage,
+        borderColor: "yellow",
+        backgroundColor: "rgba(255, 255, 0, 0.1)",
+        fill: false,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(tooltipItem) {
+              const value = tooltipItem.raw;
+              const firstValue = closingValues[0];
+              const percentChange = ((value - firstValue) / firstValue * 100).toFixed(2);
+              return [`Value: ${value}`, `% Change: ${percentChange}%`];
             }
           }
+        },
+        title: {
+          display: true,
+          text: `${indexName} Opening and Closing Index Over Time`,
+          color: "#ffffff"
+        },
+        legend: {
+          labels: {
+            color: "#ffffff"
+          }
         }
-      });
+      },
+      scales: {
+        x: {
+          type: 'time',
+          time: {
+            unit: 'day'
+          }
+        }
+      }
     }
+  });
+}
+
   </script>
