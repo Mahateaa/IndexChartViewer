@@ -68,16 +68,6 @@
       padding: 1rem;
       position: relative;
     }
-
-    #searchInput {
-      width: 100%;
-      padding: 0.5rem;
-      margin-bottom: 1rem;
-      border: 1px solid #444;
-      border-radius: 4px;
-      background-color: #3a3a3a;
-      color: white;
-    }
   </style>
 </head>
 <body>
@@ -87,7 +77,7 @@
 
   <div class="container">
     <div class="sidebar" id="index-list">
-      <input type="text" id="searchInput" placeholder="Search Index..." />
+      <!-- Company names will be populated here -->
     </div>
 
     <div class="main">
@@ -145,7 +135,7 @@
       const openingValues = rows.map(r => r.openingValue);
 
       const ctx = document.getElementById("indexChart").getContext("2d");
-      if (chart) chart       if (chart) chart.destroy();
+      if (chart) chart.destroy();
 
       chart = new Chart(ctx, {
         type: 'line', // Default chart type
@@ -157,8 +147,7 @@
             borderColor: "#4b0082",
             backgroundColor: "rgba(75, 0, 130, 0.1)",
             fill: true,
-            tension: 0.3
-          }, {
+            tension: 0.3          }, {
             label: `${indexName} Opening Value`,
             data: openingValues,
             borderColor: "orange",
@@ -209,22 +198,6 @@
         }
       });
     }
-
-    // Search functionality
-    document.getElementById("searchInput").addEventListener("input", function() {
-      const searchTerm = this.value.toLowerCase();
-      const filteredNames = indexNames.filter(name => name.toLowerCase().includes(searchTerm));
-      
-      const list = document.getElementById("index-list");
-      list.innerHTML = ""; // Clear the current list
-
-      filteredNames.forEach(name => {
-        const div = document.createElement("div");
-        div.textContent = name;
-        div.onclick = () => drawIndexChart(name);
-        list.appendChild(div);
-      });
-    });
   </script>
 </body>
 </html>
