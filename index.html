@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,7 +13,6 @@
       font-family: Arial, sans-serif;
       background-color: #1a1a1a;
       color: white;
-      transition: background-color 0.3s, color 0.3s;
     }
 
     header {
@@ -33,8 +33,6 @@
       padding: 1rem;
       overflow-y: auto;
       height: 100vh;
-      position: sticky;
-      top: 0;
     }
 
     .sidebar div {
@@ -76,10 +74,10 @@
   </header>
 
   <div class="container">
-    <div class="sidebar" id="index-list">
-      <!-- Company names will be populated here -->
-    </div>
+    <!-- Sidebar for index names -->
+    <div class="sidebar" id="index-list"></div>
 
+    <!-- Main area for chart -->
     <div class="main">
       <canvas id="indexChart"></canvas>
     </div>
@@ -92,27 +90,29 @@
   <!-- Chart.js and PapaParse -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.1/papaparse.min.js"></script>
+
+  <!-- JavaScript logic -->
   <script>
     let indexData = [];
     let indexNames = [];
     let chart = null;
 
-    // Load data
     Papa.parse("dump.csv", {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: ({ data }) => {
-        indexData = data.map(r => ({
-          date: r.index_date,
-          name: r.index_name,
-          openingValue: parseFloat(r.opening_index_value), // Add opening value
-          closingValue: parseFloat(r.closing_index_value) // Keep closing value
-        }));
-        indexNames = Array.from(new Set(indexData.map(r => r.name)));
-        renderSidebar();
-      }
-    });
+  download: true,
+  header: true,
+  skipEmptyLines: true,
+  complete: ({ data }) => {
+    indexData = data.map(r => ({
+      date: r.index_date,
+      name: r.index_name,
+      closing: parseFloat(r.closing_index_value),
+      opening: parseFloat(r.opening_index_value)
+    }));
+    indexNames = Array.from(new Set(indexData.map(r => r.name)));
+    renderSidebar();
+  }
+});
+
 
     function renderSidebar() {
       const list = document.getElementById("index-list");
@@ -126,79 +126,65 @@
     }
 
     function drawIndexChart(indexName) {
-      const rows = indexData
-        .filter(r => r.name === indexName)
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
+  const rows = indexData
+    .filter(r => r.name === indexName)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-      const labels = rows.map(r => r.date);
-      const closingValues = rows.map(r => r.closingValue);
-      const openingValues = rows.map(r => r.openingValue);
+  const labels = rows.map(r => r.date);
+  const closingValues = rows.map(r => r.closing);
+  const openingValues = rows.map(r => r.opening);
 
-      const ctx = document.getElementById("indexChart").getContext("2d");
-      if (chart) chart.destroy();
+  const ctx = document.getElementById("indexChart").getContext("2d");
+  if (chart) chart.destroy();
 
-      chart = new Chart(ctx, {
-        type: 'line', // Default chart type
-        data: {
-          labels,
-          datasets: [{
-            label: `${indexName} Closing Value`,
-            data: closingValues,
-            borderColor: "#4b0082",
-            backgroundColor: "rgba(75, 0, 130, 0.1)",
-            fill: true,
-            tension: 0.3          }, {
-            label: `${indexName} Opening Value`,
-            data: openingValues,
-            borderColor: "orange",
-            backgroundColor: "rgba(255, 165, 0, 0.1)",
-            fill: false,
-            tension: 0.3
-          }]
+  chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: `${indexName} Closing Value`,
+          data: closingValues,
+          borderColor: "#4b0082",
+          backgroundColor: "rgba(75, 0, 130, 0.1)",
+          fill: true,
+          tension: 0.3
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            tooltip: {
-              callbacks: {
-                label: function(tooltipItem) {
-                  const value = tooltipItem.raw;
-                  return [`Value: ${value}`];
-                }
-              }
-            },
-            title: {
-              display: true,
-              text: `${indexName} Opening and Closing Index Over Time`,
-              color: "#ffffff"
-            },
-            legend: {
-              labels: {
-                color: "#ffffff"
-              }
-            }
-          },
-          scales: {
-            x: {
-              type: 'time',
-              time: {
-                unit: 'day'
-              },
-              ticks: {
-                color: "#ffffff"
-              }
-            },
-            y: {
-              ticks: {
-                color: "#ffffff"
-              }
-            }
+        {
+          label: `${indexName} Opening Value`,
+          data: openingValues,
+          borderColor: "#00ced1",
+          backgroundColor: "rgba(0, 206, 209, 0.1)",
+          fill: true,
+          tension: 0.3
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: {
+          display: true,
+          text: `${indexName} Closing & Opening Index Over Time`,
+          color: "#ffffff"
+        },
+        legend: {
+          labels: {
+            color: "#ffffff"
           }
         }
-      });
+      },
+      scales: {
+        x: {
+          ticks: { color: '#ffffff' }
+        },
+        y: {
+          ticks: { color: '#ffffff' }
+        }
+      }
     }
-  </script>
-</body>
-</html>
+  });
+}
 
+  </script>
